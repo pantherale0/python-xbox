@@ -3,6 +3,8 @@ from typing import ClassVar
 from pythonxbox.api.provider.account.models import (
     ChangeGamertagResult,
     ClaimGamertagResult,
+    FamilyGroupResponse,
+    FamilyMemberSettings,
 )
 from pythonxbox.api.provider.baseprovider import BaseProvider
 
@@ -13,6 +15,7 @@ class AccountProvider(BaseProvider):
 
     HEADERS_USER_MGT: ClassVar = {"x-xbl-contract-version": "1"}
     HEADERS_ACCOUNT: ClassVar = {"x-xbl-contract-version": "2"}
+    HEADERS_FAMILY: ClassVar = {"x-xbl-contract-version": "6"}
 
     async def claim_gamertag(
         self, xuid: str, gamertag: str, **kwargs
@@ -73,3 +76,41 @@ class AccountProvider(BaseProvider):
             return ChangeGamertagResult(resp.status_code)
         except ValueError:
             resp.raise_for_status()
+
+    async def get_family_group(
+        self, xuid: str, **kwargs
+    ) -> FamilyGroupResponse:
+        """
+        Get members in your family group.
+        
+
+        Args:
+            xuid (int): Your Xuid as integer
+        
+        Returns: FamilyGroupResponse
+        """
+        url = self.BASE_URL_ACCOUNT + f"/family/memberXuid({xuid})"
+        resp = await self.client.session.get(
+            url, headers=self.HEADERS_FAMILY, **kwargs
+        )
+        resp.raise_for_status()
+        return FamilyGroupResponse(**resp.json())
+
+    async def get_family_member(
+        self, xuid: str, user_id: str, **kwargs
+    ) -> FamilyMemberSettings:
+        """
+        Get a single member of the family group.
+        
+        Args:
+            xuid (int): Your Xuid as integer
+            user_id (guid): Individual ID of the member to return.
+        
+        Returns: FamilyMemberSettings
+        """
+        url = self.BASE_URL_ACCOUNT + f"/family/memberXuid({xuid})/user/{user_id}"
+        resp = await self.client.session.get(
+            url, headers=self.HEADERS_FAMILY, **kwargs
+        )
+        resp.raise_for_status()
+        return FamilyMemberSettings(**resp.json())
